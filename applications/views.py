@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.htttp import JsonResponse
+from django.http import JsonResponse
 import json
 from .models import JobApplication
 
@@ -26,7 +26,6 @@ def applications_view(request):
         return JsonResponse(grouped, safe=False)
 
     elif request.method == 'POST':
-        elif request.method == 'POST':
         try:
             data = json.loads(request.body)
             app = JobApplication.objects.create(
