@@ -1,0 +1,6 @@
+:root{
+    --bs-body-bg: #0a1e3a;     /* deep navy page bg */
+    --bs-body-color: #e8eefc;  /* soft light text */
+    --bs-primary: #2b6cb0;     /* button/brand primary */
+  }
+.bg-navy { background-color: #0b2545 !important; } /* navbar bg */
