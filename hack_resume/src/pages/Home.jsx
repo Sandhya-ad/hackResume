@@ -1,5 +1,6 @@
 // src/pages/Home.jsx
 import { Navbar, Container, Button } from 'react-bootstrap';
+import { Link } from 'react-router-dom';
 
 export default function Home() {
   return (
@@ -9,17 +10,10 @@ export default function Home() {
           <Navbar.Brand className="fw-semibold">Hack Resume</Navbar.Brand>
           <Navbar.Toggle aria-controls="main-nav" />
           <Navbar.Collapse id="main-nav" className="justify-content-end">
-            <Button
-              variant="outline-light"
-              className="me-2"
-              onClick={() => {/* TODO: wire to /applications later */}}
-            >
+            <Button as={Link} to="/applications" variant="outline-light" className="me-2">
               Application Tracker
             </Button>
-            <Button
-              variant="primary"
-              onClick={() => {/* TODO: wire to /tailor later */}}
-            >
+            <Button as={Link} to="/tailor" variant="primary">
               Tailor Resume
             </Button>
           </Navbar.Collapse>
@@ -31,10 +25,10 @@ export default function Home() {
           <h1 className="display-5 mb-3">Welcome to Hack Resume</h1>
           <p className="lead mb-4">Your one-stop solution for creating professional resumes.</p>
           <div className="d-flex justify-content-center">
-            <Button size="lg" variant="outline-light" className="me-3">
+            <Button as={Link} to="/applications" size="lg" variant="outline-light" className="me-3">
               Application Tracker
             </Button>
-            <Button size="lg" variant="primary">
+            <Button as={Link} to="/tailor" size="lg" variant="primary">
               Tailor Resume
             </Button>
           </div>

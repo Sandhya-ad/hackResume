@@ -1,9 +1,9 @@
+// src/components/Applications.jsx
 import { useEffect, useMemo, useState } from "react";
+import { Container, Row, Col, Card, Form, Button, Stack } from "react-bootstrap";
 import { api } from "../api";
 import StatusBadge from "./StatusBadge";
 import FollowUpTag from "./FollowUpTag";
-
-
 
 const LABELS = {
   applied: "Applied", oa: "OA",
@@ -12,28 +12,31 @@ const LABELS = {
 };
 const STATUS_ORDER = ["applied","interview","offer","rejected","oa","ghosted"];
 
-function Card({ a, onChangeStatus }) {
+function ApplicationCard({ a, onChangeStatus }) {
   return (
-    <div style={{ border: "1px solid #eee", borderRadius: 10, padding: 10, background: "white" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
-        <strong>{a.company}</strong>
-        <StatusBadge value={a.status} />
-      </div>
-      <div style={{ color: "#333" }}>{a.role}</div>
-      <div style={{ fontSize: 12, color: "#666" }}>Applied: {a.date_applied}</div>
-      <div style={{ marginTop: 6 }}>
-        <FollowUpTag dateStr={a.next_followup_on} />
-      </div>
-      <div style={{ marginTop: 8 }}>
-        <select
-          value={a.status}
-          onChange={(e) => onChangeStatus(a.id, e.target.value)}
-          style={{ padding: 6, borderRadius: 8 }}
-        >
-          {STATUS_ORDER.map(s => <option key={s} value={s}>{LABELS[s]}</option>)}
-        </select>
-      </div>
-    </div>
+    <Card className="card-lift bg-light text-dark">
+      <Card.Body>
+        <Stack direction="horizontal" gap={2} className="justify-content-between mb-1">
+          <strong className="fs-6">{a.company}</strong>
+          <StatusBadge value={a.status} />
+        </Stack>
+        <div className="text-secondary">{a.role}</div>
+        <div className="small text-muted mt-1">Applied: {a.date_applied}</div>
+        <div className="mt-2">
+          <FollowUpTag dateStr={a.next_followup_on} />
+        </div>
+        <Form className="mt-3">
+          <Form.Select
+            value={a.status}
+            onChange={(e) => onChangeStatus(a.id, e.target.value)}
+          >
+            {STATUS_ORDER.map(s => (
+              <option key={s} value={s}>{LABELS[s]}</option>
+            ))}
+          </Form.Select>
+        </Form>
+      </Card.Body>
+    </Card>
   );
 }
 
@@ -44,8 +47,12 @@ export default function Applications() {
   const [kanban, setKanban] = useState(true);
 
   async function load() {
-    try { const r = await api.get("/applications/"); setRows(r.data); }
-    catch { setRows([]); }
+    try {
+      const r = await api.get("/applications/");
+      setRows(r.data);
+    } catch {
+      setRows([]);
+    }
   }
   useEffect(() => { load(); }, []);
 
@@ -71,48 +78,88 @@ export default function Applications() {
   }, [filtered]);
 
   return (
-    <div>
-      <h2>Applications</h2>
+    <Container className="py-4">
+      <div className="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+        <h2 className="m-0">Applications</h2>
+        <div className="d-flex gap-2">
+          <Button
+            variant={kanban ? "light" : "outline-light"}
+            onClick={() => setKanban(true)}
+            size="sm"
+          >
+            Kanban
+          </Button>
+          <Button
+            variant={!kanban ? "light" : "outline-light"}
+            onClick={() => setKanban(false)}
+            size="sm"
+          >
+            List
+          </Button>
+        </div>
+      </div>
 
-      <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 12, flexWrap: "wrap" }}>
-        <input
+      <Form className="d-flex gap-2 align-items-center mb-3 flex-wrap">
+        <Form.Control
+          type="search"
           placeholder="Search company or role"
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          style={{ padding: 8, borderRadius: 8, border: "1px solid #ddd", minWidth: 260 }}
+          className="form-control-dark"
+          style={{ minWidth: 260 }}     // replace the non-Bootstrap class
         />
-        <select value={stage} onChange={(e) => setStage(e.target.value)} style={{ padding: 8, borderRadius: 8 }}>
+
+        <Form.Select
+          value={stage}
+          onChange={(e) => setStage(e.target.value)}
+          className="form-select-dark"
+          style={{ maxWidth: 220 }}
+        >
           <option value="all">All stages</option>
-          {STATUS_ORDER.map(s => <option key={s} value={s}>{LABELS[s]}</option>)}
-        </select>
-        <button onClick={() => setKanban(!kanban)}>{kanban ? "List View" : "Kanban View"}</button>
-      </div>
+          {STATUS_ORDER.map(s => (
+            <option key={s} value={s}>{LABELS[s]}</option>
+          ))}
+        </Form.Select>
+      </Form>
+
 
       {kanban ? (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+        <Row className="g-3">
           {["applied","interview","offer"].map(col => (
-            <div key={col} style={{ background: "#f7f8fa", borderRadius: 12, padding: 10 }}>
-              <div style={{ fontWeight: 600, marginBottom: 8 }}>{LABELS[col]}</div>
-              <div style={{ display: "grid", gap: 8 }}>
-                {groups[col].map(a => (
-                  <Card key={a.id} a={a} onChangeStatus={onChangeStatus} />
-                ))}
+            <Col md={4} key={col}>
+              <div className="kanban-col p-3 h-100">
+                <div className="fw-semibold mb-2">{LABELS[col]}</div>
+                <Stack gap={3}>
+                  {groups[col].map(a => (
+                    <ApplicationCard key={a.id} a={a} onChangeStatus={onChangeStatus} />
+                  ))}
+                </Stack>
               </div>
-            </div>
+            </Col>
           ))}
-          <div style={{ background: "#f7f8fa", borderRadius: 12, padding: 10 }}>
-            <div style={{ fontWeight: 600, marginBottom: 8 }}>Other</div>
-            <div style={{ display: "grid", gap: 8 }}>
-              {filtered.filter(a => !["applied","interview","offer"].includes(a.status))
-                .map(a => <Card key={a.id} a={a} onChangeStatus={onChangeStatus} />)}
+
+          <Col md={12}>
+            <div className="kanban-col p-3">
+              <div className="fw-semibold mb-2">Other</div>
+              <Row className="g-3">
+                {filtered
+                  .filter(a => !["applied","interview","offer"].includes(a.status))
+                  .map(a => (
+                    <Col md={4} key={a.id}>
+                      <ApplicationCard a={a} onChangeStatus={onChangeStatus} />
+                    </Col>
+                  ))}
+              </Row>
             </div>
-          </div>
-        </div>
+          </Col>
+        </Row>
       ) : (
-        <div style={{ display: "grid", gap: 8 }}>
-          {filtered.map(a => <Card key={a.id} a={a} onChangeStatus={onChangeStatus} />)}
-        </div>
+        <Stack gap={3}>
+          {filtered.map(a => (
+            <ApplicationCard key={a.id} a={a} onChangeStatus={onChangeStatus} />
+          ))}
+        </Stack>
       )}
-    </div>
+    </Container>
   );
 }
