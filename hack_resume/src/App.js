@@ -1,20 +1,12 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import NavBar from "./components/NavBar";
-import Dashboard from "./components/Dashboard";
-import Applications from "./components/Applications";
-import NewApplication from "./components/NewApplication";
-
-export default function App() {
+import './App.css';
+import {Routes, Route, Navigate, Navigation} from "react-router-dom";
+import Home from "./pages/Home";
+function App() {
   return (
-    <BrowserRouter>
-      <NavBar />
-      <div style={{ padding: 16, maxWidth: 1200, margin: "0 auto" }}>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/applications" element={<Applications />} />
-          <Route path="/applications/new" element={<NewApplication />} />
-        </Routes>
-      </div>
-    </BrowserRouter>
+      <>
+      <Routes>
+        <Route path="/" element={<Home />} />
+      </Routes>
+      </>
   );
 }
