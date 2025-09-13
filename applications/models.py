@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.conf import settings
 
 # job application model
 class JobApplication(models.Model):
@@ -9,7 +9,7 @@ class JobApplication(models.Model):
         ("offer", "Offer"),
         ("rejected", "Rejected"),
     ]
-    user = models.ForeignKey(User, on_delete=models.CASCADE) 
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)    
     company_name = models.CharField(max_length=255)
     position = models.CharField(max_length=255)
     date_applied = models.DateField(auto_now_add=True)
