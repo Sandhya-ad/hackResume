@@ -1,0 +1,39 @@
+// src/pages/Home.jsx
+import { Navbar, Container, Button } from 'react-bootstrap';
+import { Link } from 'react-router-dom';
+
+export default function Home() {
+  return (
+    <>
+      <Navbar expand="md" variant="dark" className="bg-navy shadow-sm">
+        <Container>
+          <Navbar.Brand className="fw-semibold">Hack Resume</Navbar.Brand>
+          <Navbar.Toggle aria-controls="main-nav" />
+          <Navbar.Collapse id="main-nav" className="justify-content-end">
+            <Button as={Link} to="/applications" variant="outline-light" className="me-2">
+              Application Tracker
+            </Button>
+            <Button as={Link} to="/tailor" variant="primary">
+              Tailor Resume
+            </Button>
+          </Navbar.Collapse>
+        </Container>
+      </Navbar>
+
+      <main className="py-5">
+        <Container className="text-center">
+          <h1 className="display-5 mb-3">Welcome to Hack Resume</h1>
+          <p className="lead mb-4">Your one-stop solution for creating professional resumes.</p>
+          <div className="d-flex justify-content-center">
+            <Button as={Link} to="/applications" size="lg" variant="outline-light" className="me-3">
+              Application Tracker
+            </Button>
+            <Button as={Link} to="/tailor" size="lg" variant="primary">
+              Tailor Resume
+            </Button>
+          </div>
+        </Container>
+      </main>
+    </>
+  );
+}

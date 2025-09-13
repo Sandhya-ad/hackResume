@@ -1,0 +1,52 @@
+:root{
+    --bs-body-bg: #0a1e3a;     /* deep navy page bg */
+    --bs-body-color: #e8eefc;  /* soft light text */
+    --bs-primary: #2b6cb0;     /* button/brand primary */
+  }
+.bg-navy { background-color: #0b2545 !important; } /* navbar bg */
+
+/* Subtle panels/columns on dark background */
+.kanban-col {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+  }
+  
+  /* Lifted light cards on dark bg */
+  .card-lift {
+    border-radius: 14px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  }
+  /* High-contrast inputs on dark backgrounds */
+.form-control-dark {
+    color: #fff;
+    background-color: rgba(255, 255, 255, 0.10);
+    border-color: rgba(255, 255, 255, 0.25);
+  }
+  
+.form-control-dark::placeholder {
+    color: rgba(255, 255, 255, 0.65);
+  }
+  
+.form-control-dark:focus {
+    color: #fff;
+    background-color: rgba(255, 255, 255, 0.14);
+    border-color: #86b7fe;               /* Bootstrap primary-ish focus */
+    box-shadow: 0 0 0 .2rem rgba(13, 110, 253, .25);
+  }
+  
+  /* Match the select to the input */
+.form-select-dark {
+    color: #fff;
+    background-color: rgba(255, 255, 255, 0.10);
+    border-color: rgba(255, 255, 255, 0.25);
+    background-image: var(--bs-form-select-bg-img); /* keep caret */
+  }
+  
+.form-select-dark:focus {
+    color: #fff;
+    background-color: rgba(255, 255, 255, 0.14);
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 .2rem rgba(13, 110, 253, .25);
+  }
+  
