@@ -29,6 +29,7 @@ def applications_view(request):
         try:
             data = json.loads(request.body)
             app = JobApplication.objects.create(
+                user=request.user,
                 company_name=data.get('company_name', ''),
                 position=data.get('position', ''),
                 status=data.get('status', 'applied'),
