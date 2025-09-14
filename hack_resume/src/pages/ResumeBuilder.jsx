@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Container, Row, Col, Form, Button, Card, Accordion, Alert } from "react-bootstrap";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getResumeById, saveResume } from "../utils/storage";
+import { getResumeSuggestions } from "../utils/geminiApi"; // <-- ADD THIS
+
 
 export default function ResumeBuilder() {
   const navigate = useNavigate();
@@ -194,6 +196,31 @@ export default function ResumeBuilder() {
       alert("Error saving resume. Please try again.");
     }
   };
+
+  const handleAISuggestions = async () => {
+  try {
+    let resumeToSend;
+
+    if (resumeId) {
+      // Existing resume
+      const storedResume = getResumeById(resumeId);
+      resumeToSend = storedResume ? storedResume.data : resumeData;
+    } else {
+      // New resume
+      resumeToSend = resumeData;
+    }
+
+    // Call the Gemini API
+    const suggestions = await getResumeSuggestions(resumeToSend);
+
+    // Display suggestions (for now using alert)
+    alert(suggestions);
+
+  } catch (error) {
+    console.error("Error fetching AI suggestions:", error);
+    alert("Sorry, something went wrong while getting suggestions.");
+  }
+};
 
   return (
     <Container fluid className="py-4">
@@ -474,10 +501,10 @@ export default function ResumeBuilder() {
               variant="info" 
               size="lg" 
               style={{ marginLeft: "50px" }} 
-              onClick={() => alert("AI Suggestions coming soon!")}
+              onClick={handleAISuggestions}
             >
               AI Suggestions
-            </Button>
+              </Button>
           </div>
         </Col>
       </Row>
