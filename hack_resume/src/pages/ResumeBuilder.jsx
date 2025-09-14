@@ -32,6 +32,12 @@ export default function ResumeBuilder() {
   const [showModal, setShowModal] = useState(false);
   const [jobDescription, setJobDescription] = useState("");
 
+  // 🔹 New state for AI suggestions modal
+  const [showSuggestionsModal, setShowSuggestionsModal] = useState(false);
+  const [aiSuggestions, setAiSuggestions] = useState("");
+
+
+
   useEffect(() => {
     if (resumeId) {
       const resume = getResumeById(resumeId);
@@ -200,24 +206,27 @@ export default function ResumeBuilder() {
 
   // 🔹 AI Suggestions with job description
   const handleAISuggestions = async () => {
-    setShowModal(false); 
-    try {
-      let resumeToSend = resumeId 
-        ? (getResumeById(resumeId)?.data || resumeData) 
-        : resumeData;
+  setShowModal(false); 
+  try {
+    let resumeToSend = resumeId 
+      ? (getResumeById(resumeId)?.data || resumeData) 
+      : resumeData;
 
-      const prompt = `Please provide suggestions to improve this resume for the following job description:\n\nJob Description: ${jobDescription}\n\nResume: ${JSON.stringify(resumeToSend)}`;
+    const prompt = `Please provide suggestions to improve this resume for the following job description:\n\nJob Description: ${jobDescription}\n\nResume: ${JSON.stringify(resumeToSend)}`;
 
-      console.log("Prompt sent to Gemini API:", prompt);
+    console.log("Prompt sent to Gemini API:", prompt);
 
-      const suggestions = await getResumeSuggestions({ resume: resumeToSend, jobDescription });
+    const suggestions = await getResumeSuggestions({ resume: resumeToSend, jobDescription });
 
-      alert(suggestions);
-    } catch (error) {
-      console.error("Error fetching AI suggestions:", error);
-      alert("Sorry, something went wrong while getting suggestions.");
-    }
-  };
+    setAiSuggestions(suggestions);      // ✅ Save to state
+    setShowSuggestionsModal(true);      // ✅ Open modal
+  } catch (error) {
+    console.error("Error fetching AI suggestions:", error);
+    setAiSuggestions("Sorry, something went wrong while getting suggestions.");
+    setShowSuggestionsModal(true);
+  }
+};
+
 
   return (
     <Container fluid className="py-4">
@@ -534,6 +543,24 @@ export default function ResumeBuilder() {
           </Button>
         </Modal.Footer>
       </Modal>
+
+      {/* 🔹 AI Suggestions Modal */}
+  <Modal show={showSuggestionsModal} onHide={() => setShowSuggestionsModal(false)} size="lg" centered>
+  <Modal.Header closeButton>
+    <Modal.Title>AI Resume Suggestions</Modal.Title>
+  </Modal.Header>
+  <Modal.Body style={{ whiteSpace: "pre-wrap" }}>
+    {aiSuggestions}
+  </Modal.Body>
+  <Modal.Footer>
+    <Button variant="secondary" onClick={() => setShowSuggestionsModal(false)}>
+      Close
+    </Button>
+  </Modal.Footer>
+</Modal>
+
+                
+
     </Container>
   );
 }
