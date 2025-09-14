@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Navbar, Container, Button, Row, Col, Card, Form } from "react-bootstrap";
 import { Link, useNavigate } from "react-router-dom";
-import { getResumes } from "../utils/storage";
+import { getMasterResume } from "../utils/storage";
 import logo from "../assets/logo-hackresume.png";
 import talentGraphic from "../assets/talent-graphic.png";
 import ctaLogos from "../assets/cta-logos.png"; // ⭐ your blue image
@@ -10,6 +10,8 @@ export default function Home() {
   const [formData, setFormData] = useState({ name: "", email: "", phone: "" });
   const navigate = useNavigate();
 
+  const masterResume = getMasterResume();
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -17,19 +19,18 @@ export default function Home() {
 
   const handleCreateResume = () => {
     if (!formData.name || !formData.email) {
-      alert("Please enter at least your name and email");
+      alert("Please enter your name and email");
       return;
     }
     navigate("/resume-builder", { state: { initialData: formData } });
   };
 
   const handleViewResumes = () => {
-    const resumes = getResumes();
-    if (resumes.length === 0) {
-      alert("You don't have any saved resumes yet. Create one first!");
-    } else {
-      navigate("/my-resumes");
-    }
+    navigate("/my-resumes");
+  };
+
+  const handleCreateFromMaster = () => {
+    navigate("/resume-builder", { state: { fromMaster: true } });
   };
 
   // ===== HERO STYLES =====
@@ -116,11 +117,11 @@ export default function Home() {
   const ctaWrapStyle = {
     background: "#0F1F44",
     color: "#fff",
-    padding: "28px 0",          // ⬅️ smaller blue band
+    padding: "28px 0", // smaller blue band
   };
 
   const ctaHeadlineStyle = {
-    fontSize: "clamp(22px, 3vw, 36px)", // slightly smaller to fit tighter band
+    fontSize: "clamp(22px, 3vw, 36px)",
     lineHeight: 1.15,
     fontWeight: 800,
     margin: 0,
@@ -129,7 +130,7 @@ export default function Home() {
   const ctaLogosStyle = {
     width: "100%",
     height: "auto",
-    maxWidth: 480,              // ⬅️ a bit narrower
+    maxWidth: 480, // a bit narrower
     marginTop: 16,
     opacity: 0.95,
     filter: "drop-shadow(0 6px 14px rgba(0,0,0,.18))",
@@ -149,7 +150,7 @@ export default function Home() {
   // white gap after blue band
   const whiteGapStyle = {
     background: "#ffffff",
-    height: 32,                 // ⬅️ visible white after blue
+    height: 32, // visible white after blue
   };
 
   return (
@@ -249,11 +250,19 @@ export default function Home() {
                       />
                     </Form.Group>
 
-                    <div className="d-grid">
-                      <Button type="submit" variant="primary" size="lg">
-                        Create My Resume
+                    <div className="d-grid mt-4">
+                      <Button onClick={handleCreateResume} variant="primary" size="lg">
+                        Create New Resume
                       </Button>
                     </div>
+
+                    {masterResume && (
+                      <div className="d-grid mt-2">
+                        <Button onClick={handleCreateFromMaster} variant="outline-primary" size="lg">
+                          Create from Master Template
+                        </Button>
+                      </div>
+                    )}
                   </Form>
                 </Card.Body>
               </Card>
@@ -272,8 +281,8 @@ export default function Home() {
                 <Card.Body className="p-4 p-md-5">
                   <h3 style={featureTitleStyle}>Instant Sharing</h3>
                   <p style={featureTextStyle}>
-                    Download polished PDFs or share your resume online with a single link. 
-                    Our templates are optimized for recruiters and applicant tracking systems.
+                    Download polished PDFs or share your resume online with a single link. Our
+                    templates are optimized for recruiters and applicant tracking systems.
                   </p>
                 </Card.Body>
               </Card>
@@ -283,8 +292,8 @@ export default function Home() {
                 <Card.Body className="p-4 p-md-5">
                   <h3 style={featureTitleStyle}>Smart Suggestions</h3>
                   <p style={featureTextStyle}>
-                    Get content tips tailored to your industry. Our AI helps refine wording, highlight 
-                    achievements, and align your resume with the job you want.
+                    Get content tips tailored to your industry. Our AI helps refine wording,
+                    highlight achievements, and align your resume with the job you want.
                   </p>
                 </Card.Body>
               </Card>
@@ -294,8 +303,8 @@ export default function Home() {
                 <Card.Body className="p-4 p-md-5">
                   <h3 style={featureTitleStyle}>Organized & Professional</h3>
                   <p style={featureTextStyle}>
-                    Keep track of applications, updates, and versions all in one place. 
-                    Present yourself with a modern design that leaves a lasting impression.
+                    Keep track of applications, updates, and versions all in one place. Present
+                    yourself with a modern design that leaves a lasting impression.
                   </p>
                 </Card.Body>
               </Card>
@@ -309,14 +318,8 @@ export default function Home() {
         <Container fluid="xl">
           <Row className="align-items-center g-4">
             <Col lg={8}>
-              <h2 style={ctaHeadlineStyle}>
-                Ready to find and manage top talent?
-              </h2>
-              <img
-                src={ctaLogos}
-                alt="Top-rated by trusted platforms"
-                style={ctaLogosStyle}
-              />
+              <h2 style={ctaHeadlineStyle}>Ready to find and manage top talent?</h2>
+              <img src={ctaLogos} alt="Top-rated by trusted platforms" style={ctaLogosStyle} />
             </Col>
             <Col lg={4} className="text-lg-end">
               <Button

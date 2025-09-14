@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { Container, Button, Row, Col, Card, Alert, Modal } from "react-bootstrap";
+import { Container, Button, Row, Col, Card, Alert, Modal, Badge } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
-import { getResumes, deleteResume } from "../utils/storage";
+import { getResumes, deleteResume, setAsMaster, getMasterResume, saveResume } from "../utils/storage";
 import jsPDF from "jspdf";
 
 export default function MyResumes() {
@@ -9,6 +9,7 @@ export default function MyResumes() {
   const [resumes, setResumes] = useState([]);
   const [selectedResume, setSelectedResume] = useState(null);
   const [showViewer, setShowViewer] = useState(false);
+  const [masterResume, setMasterResume] = useState(null);
 
   useEffect(() => {
     loadResumes();
@@ -17,6 +18,7 @@ export default function MyResumes() {
   const loadResumes = () => {
     const savedResumes = getResumes();
     setResumes(savedResumes);
+    setMasterResume(getMasterResume());
   };
 
   const viewResume = (resume) => {
@@ -28,10 +30,24 @@ export default function MyResumes() {
     navigate('/resume-builder', { state: { resumeId } });
   };
 
+  const handleSetMaster = (resume) => {
+    if (setAsMaster(resume.id)) {
+      setMasterResume(resume);
+      alert(`"${resume.title}" set as master resume!`);
+      loadResumes();
+    }
+  };
+
   const handleDeleteResume = (resumeId, resumeTitle) => {
     if (window.confirm(`Are you sure you want to delete "${resumeTitle}"?`)) {
       const success = deleteResume(resumeId);
       if (success) {
+        const currentMaster = getMasterResume();
+        if (currentMaster && currentMaster.id === resumeId) {
+          localStorage.removeItem("masterResume");
+          setMasterResume(null);
+        }
+  
         loadResumes();
         alert("Resume deleted successfully!");
       } else {
@@ -44,6 +60,26 @@ export default function MyResumes() {
     navigate('/resume-builder');
   };
 
+  const createFromMaster = () => {
+    if (!masterResume) {
+      alert("No master resume set. Please set a master resume first.");
+      return;
+    }
+    
+    const newResume = {
+      ...masterResume,
+      id: Date.now(),
+      title: `${masterResume.title}`,
+      isMaster: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    
+    saveResume(newResume);
+    loadResumes();
+    editResume(newResume.id);
+  };
+
   const downloadPDF = (resume) => {
     if (!resume || !resume.data) return;
 
@@ -53,16 +89,13 @@ export default function MyResumes() {
       const margin = 20;
       let yPosition = margin;
       
-      // Add header with background color
       pdf.setFillColor(52, 58, 64);
       pdf.rect(0, 0, pageWidth, 50, 'F');
       
-      // Name in header
       pdf.setFontSize(24);
       pdf.setTextColor(255, 255, 255);
       pdf.text(resume.data.personalInfo.name || "Resume", margin, 30);
       
-      // Contact info in header
       pdf.setFontSize(11);
       let contactInfo = [];
       if (resume.data.personalInfo.email) contactInfo.push(resume.data.personalInfo.email);
@@ -74,7 +107,6 @@ export default function MyResumes() {
       pdf.setTextColor(0, 0, 0);
       yPosition = 60;
       
-      // Add sections
       const addSection = (title, content) => {
         if (!content || content.trim() === "") return;
         
@@ -93,7 +125,6 @@ export default function MyResumes() {
         yPosition += (contentLines.length * 6) + 15;
       };
       
-      // Education section
       if (resume.data.education && resume.data.education.length > 0) {
         let educationContent = "";
         resume.data.education.forEach(edu => {
@@ -110,7 +141,6 @@ export default function MyResumes() {
         addSection("EDUCATION", educationContent);
       }
       
-      // Experience section
       if (resume.data.experience && resume.data.experience.length > 0) {
         let experienceContent = "";
         resume.data.experience.forEach(exp => {
@@ -127,12 +157,10 @@ export default function MyResumes() {
         addSection("EXPERIENCE", experienceContent);
       }
       
-      // Skills section
       if (resume.data.skills && resume.data.skills.length > 0) {
         addSection("SKILLS", resume.data.skills.join(', '));
       }
       
-      // Save the PDF
       const fileName = resume.data.personalInfo.name 
         ? `${resume.data.personalInfo.name.replace(/\s+/g, '_')}_Resume.pdf`
         : 'My_Resume.pdf';
@@ -158,6 +186,20 @@ export default function MyResumes() {
         </div>
       </div>
 
+      {masterResume && (
+        <Alert variant="info" className="bg-dark text-white border-light mb-3">
+          <strong>Master Resume:</strong> {masterResume.title}
+          <Button 
+            variant="outline-light" 
+            size="sm" 
+            className="ms-3"
+            onClick={createFromMaster}
+          >
+            Create from Master
+          </Button>
+        </Alert>
+      )}
+
       {resumes.length === 0 ? (
         <Card className="text-center py-5 bg-dark text-white">
           <Card.Body>
@@ -179,7 +221,12 @@ export default function MyResumes() {
               <Col md={6} lg={4} key={resume.id} className="mb-4">
                 <Card className="h-100 bg-dark text-white border-light">
                   <Card.Body className="d-flex flex-column">
-                    <Card.Title className="text-white">{resume.title}</Card.Title>
+                    <Card.Title className="text-white">
+                      {resume.title}
+                      {masterResume && masterResume.id === resume.id && (
+                        <Badge bg="success" className="ms-2">Master</Badge>
+                      )}
+                    </Card.Title>
                     
                     <Card.Text className="text-light">
                       <small>
@@ -214,6 +261,15 @@ export default function MyResumes() {
                         >
                           Edit Resume
                         </Button>
+                        {(!masterResume || masterResume.id !== resume.id) && (
+                          <Button
+                            variant="outline-warning"
+                            size="sm"
+                            onClick={() => handleSetMaster(resume)}
+                          >
+                            Set as Master
+                          </Button>
+                        )}
                         <Button
                           variant="outline-primary"
                           size="sm"
@@ -238,7 +294,6 @@ export default function MyResumes() {
         </>
       )}
 
-      {/* Resume Viewer Modal */}
       <Modal show={showViewer} onHide={() => setShowViewer(false)} size="lg" centered>
         <Modal.Header closeButton className="bg-dark text-white border-light">
           <Modal.Title>{selectedResume?.title}</Modal.Title>

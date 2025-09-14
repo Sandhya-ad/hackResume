@@ -11,3 +11,56 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* Make cards stand out slightly on light backgrounds */
+.card-lift.bg-light {
+  background-color: #f5f7fa !important; /* a touch darker than default */
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+.cream-label {
+  color: #f5deb3; /* light cream / wheat color */
+}
+
+/* Notes list readability */
+.notes-list .card {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* If you still have very faint text somewhere using text-muted, strengthen it */
+.text-muted {
+  color: #6c757d !important; /* Bootstrap's secondary (higher contrast) */
+}
+
+/* Optional: avoid super tiny meta text */
+small, .small {
+  font-size: 0.95rem;
+}
+
+/* Use this on any dark background container to force readable light text */
+.on-dark {
+  color: #f8fafc; /* near-white */
+}
+.on-dark .text-muted,
+.on-dark .text-secondary,
+.on-dark .text-dark {
+  color: #f8fafc !important; /* override Bootstrap's gray/black text */
+}
+
+/* Cream-colored labels like "Date Applied", "Next Follow-up" */
+.cream-label {
+  color: #ffe8b3; /* cream on dark */
+  font-weight: 600;
+}
+
+/* Values (dates, etc.) in strong light color */
+.meta-value {
+  color: #ffffff;
+  font-weight: 500;
+}
+
+/* Optional: timestamps on dark */
+.on-dark .meta-timestamp {
+  color: #d1d5db;
+  font-size: 0.95rem;
+}
+

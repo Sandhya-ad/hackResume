@@ -36,9 +36,47 @@ export const saveResume = (resume) => {
       const savedResumes = getResumes();
       const updatedResumes = savedResumes.filter(r => r.id !== id);
       localStorage.setItem('savedResumes', JSON.stringify(updatedResumes));
+  
+      // If the deleted resume was the master, clear it
+      const master = getMasterResume();
+      if (master && master.id === id) {
+        localStorage.removeItem('masterResume');
+      }
+  
       return true;
     } catch (error) {
       console.error('Error deleting resume:', error);
       return false;
     }
+  };  
+
+  // Get the master resume
+export const getMasterResume = () => {
+    try {
+      return JSON.parse(localStorage.getItem('masterResume') || 'null');
+    } catch (error) {
+      console.error('Error loading master resume:', error);
+      return null;
+    }
   };
+  
+  // Save the master resume
+  export const saveMasterResume = (resume) => {
+    try {
+      localStorage.setItem('masterResume', JSON.stringify(resume));
+      return true;
+    } catch (error) {
+      console.error('Error saving master resume:', error);
+      return false;
+    }
+  };
+  
+  // Set a resume as the master template
+  export const setAsMaster = (resumeId) => {
+    const resume = getResumeById(resumeId);
+    if (resume) {
+      return saveMasterResume(resume);
+    }
+    return false;
+  };
+  

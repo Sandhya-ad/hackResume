@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { Container, Row, Col, Form, Button, Card, Accordion, Alert } from "react-bootstrap";
+import { Container, Row, Col, Form, Button, Card, Accordion, Alert, Modal } from "react-bootstrap"; 
 import { useNavigate, useLocation } from "react-router-dom";
-import { getResumeById, saveResume } from "../utils/storage";
+import { getResumeById, saveResume, getMasterResume } from "../utils/storage";
+import { getResumeSuggestions } from "../utils/geminiApi"; 
 
 export default function ResumeBuilder() {
   const navigate = useNavigate();
   const location = useLocation();
   const resumeId = location.state?.resumeId;
   const initialData = location.state?.initialData;
-  
+  const fromMaster = location.state?.fromMaster;
+
   const [resumeData, setResumeData] = useState({
     personalInfo: {
       name: "",
@@ -20,22 +22,47 @@ export default function ResumeBuilder() {
     },
     education: [],
     experience: [],
-    skills: []
+    skills: [],
+    jobDetails: {
+      targetJob: "",
+      company: "",
+      keywords: "",
+      customSummary: ""
+    }
   });
 
   const [newSkill, setNewSkill] = useState("");
   const [saved, setSaved] = useState(false);
   const [isNewResume, setIsNewResume] = useState(false);
 
+  // 🔹 New state for modal + job description
+  const [showModal, setShowModal] = useState(false);
+  const [jobDescription, setJobDescription] = useState("");
+
+  // 🔹 New state for AI suggestions modal
+  const [showSuggestionsModal, setShowSuggestionsModal] = useState(false);
+  const [aiSuggestions, setAiSuggestions] = useState("");
+
+
+
   useEffect(() => {
     if (resumeId) {
-      // Load existing resume
       const resume = getResumeById(resumeId);
       if (resume && resume.data) {
-        setResumeData(resume.data);
+        setResumeData(prev => ({
+          ...prev,
+          ...resume.data,
+          personalInfo: {
+            ...prev.personalInfo,
+            ...resume.data.personalInfo,
+          },
+          jobDetails: {
+            ...prev.jobDetails,
+            ...resume.data.jobDetails,
+          },
+        }));
       }
     } else if (initialData) {
-      // Create new resume with initial data from home page
       setResumeData(prev => ({
         ...prev,
         personalInfo: {
@@ -46,11 +73,28 @@ export default function ResumeBuilder() {
         }
       }));
       setIsNewResume(true);
+    } else if (fromMaster) {
+      const master = getMasterResume();
+      if (master) {
+        setResumeData(prev => ({
+          ...prev,
+          ...master.data,
+          personalInfo: {
+            ...prev.personalInfo,
+            ...master.data.personalInfo,
+          },
+          jobDetails: {
+            ...prev.jobDetails,
+            ...master.data.jobDetails,
+          },
+        }));
+        setIsNewResume(true);
+      }
     } else {
-      // Create a completely new resume
       setIsNewResume(true);
     }
-  }, [resumeId, initialData]);
+  }, [resumeId, initialData, fromMaster]);
+  
 
   const handlePersonalInfoChange = (e) => {
     const { name, value } = e.target;
@@ -58,6 +102,17 @@ export default function ResumeBuilder() {
       ...prev,
       personalInfo: {
         ...prev.personalInfo,
+        [name]: value
+      }
+    }));
+  };
+
+  const handleJobDetailsChange = (e) => {
+    const { name, value } = e.target;
+    setResumeData(prev => ({
+      ...prev,
+      jobDetails: {
+        ...prev.jobDetails,
         [name]: value
       }
     }));
@@ -151,13 +206,12 @@ export default function ResumeBuilder() {
     let resumeToSave;
     
     if (resumeId) {
-      // Update existing resume
       const existingResume = getResumeById(resumeId);
       if (!existingResume) {
         resumeToSave = {
           id: Date.now(),
           title: `${resumeData.personalInfo.name || 'New'} Resume`,
-          isMaster: true,
+          isMaster: false,
           data: resumeData,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
@@ -170,30 +224,56 @@ export default function ResumeBuilder() {
         };
       }
     } else {
-      // Create new resume
       resumeToSave = {
         id: Date.now(),
         title: `${resumeData.personalInfo.name || 'New'} Resume`,
-        isMaster: true,
+        isMaster: false,
         data: resumeData,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
     }
     
-    // Save to storage
     const success = saveResume(resumeToSave);
     
     if (success) {
       setSaved(true);
-      // Navigate to resume viewer after a brief delay
       setTimeout(() => {
-        navigate('/my-resumes'); 
+        navigate('/my-resumes');
       }, 1000);
     } else {
       alert("Error saving resume. Please try again.");
     }
   };
+
+  // 🔹 Open modal
+  const handleOpenModal = () => {
+    setShowModal(true);
+  };
+
+  // 🔹 AI Suggestions with job description
+  const handleAISuggestions = async () => {
+  setShowModal(false); 
+  try {
+    let resumeToSend = resumeId 
+      ? (getResumeById(resumeId)?.data || resumeData) 
+      : resumeData;
+
+    const prompt = `Please provide suggestions to improve this resume for the following job description:\n\nJob Description: ${jobDescription}\n\nResume: ${JSON.stringify(resumeToSend)}`;
+
+    console.log("Prompt sent to Gemini API:", prompt);
+
+    const suggestions = await getResumeSuggestions({ resume: resumeToSend, jobDescription });
+
+    setAiSuggestions(suggestions);      // ✅ Save to state
+    setShowSuggestionsModal(true);      // ✅ Open modal
+  } catch (error) {
+    console.error("Error fetching AI suggestions:", error);
+    setAiSuggestions("Sorry, something went wrong while getting suggestions.");
+    setShowSuggestionsModal(true);
+  }
+};
+
 
   return (
     <Container fluid className="py-4">
@@ -204,15 +284,18 @@ export default function ResumeBuilder() {
               {resumeId ? 'Edit Resume' : 'Create New Resume'}
               {isNewResume && <span className="badge bg-secondary ms-2">New</span>}
             </h2>
+            <Button variant="outline-secondary" onClick={() => navigate('/')}>
+              Back to Home
+            </Button>
           </div>
-          {saved && <Alert variant="success" className="mt-3">Resume saved successfully! Redirecting to viewer...</Alert>}
+          {saved && <Alert variant="success" className="mt-3">Resume saved successfully! Redirecting to your resumes...</Alert>}
         </Col>
       </Row>
       
       <Row>
         <Col>
           <Accordion defaultActiveKey="0" alwaysOpen>
-            {/* Personal Information */}
+            {/* Personal Info */}
             <Accordion.Item eventKey="0">
               <Accordion.Header>Personal Information</Accordion.Header>
               <Accordion.Body>
@@ -276,11 +359,10 @@ export default function ResumeBuilder() {
               </Accordion.Body>
             </Accordion.Item>
 
-            {/* Education */}
             <Accordion.Item eventKey="1">
               <Accordion.Header>Education</Accordion.Header>
               <Accordion.Body>
-                {resumeData.education.map((edu, index) => (
+                {resumeData.education.map((edu) => (
                   <Card key={edu.id} className="mb-3">
                     <Card.Body>
                       <Row className="g-3">
@@ -353,11 +435,10 @@ export default function ResumeBuilder() {
               </Accordion.Body>
             </Accordion.Item>
 
-            {/* Experience */}
             <Accordion.Item eventKey="2">
               <Accordion.Header>Work Experience</Accordion.Header>
               <Accordion.Body>
-                {resumeData.experience.map((exp, index) => (
+                {resumeData.experience.map((exp) => (
                   <Card key={exp.id} className="mb-3">
                     <Card.Body>
                       <Row className="g-3">
@@ -423,7 +504,6 @@ export default function ResumeBuilder() {
               </Accordion.Body>
             </Accordion.Item>
 
-            {/* Skills */}
             <Accordion.Item eventKey="3">
               <Accordion.Header>Skills</Accordion.Header>
               <Accordion.Body>
@@ -464,15 +544,118 @@ export default function ResumeBuilder() {
                 </Row>
               </Accordion.Body>
             </Accordion.Item>
+
+            <Accordion.Item eventKey="4">
+              <Accordion.Header>Job Application Details (Optional)</Accordion.Header>
+              <Accordion.Body>
+                <Row className="g-3">
+                  <Col md={6}>
+                    <Form.Label>Target Job Title</Form.Label>
+                    <Form.Control
+                      name="targetJob"
+                      value={resumeData.jobDetails.targetJob}
+                      onChange={handleJobDetailsChange}
+                      placeholder="e.g., Senior Frontend Developer"
+                    />
+                  </Col>
+                  <Col md={6}>
+                    <Form.Label>Company Name</Form.Label>
+                    <Form.Control
+                      name="company"
+                      value={resumeData.jobDetails.company}
+                      onChange={handleJobDetailsChange}
+                      placeholder="e.g., Google, Amazon, etc."
+                    />
+                  </Col>
+                  <Col md={12}>
+                    <Form.Label>Job Description Keywords</Form.Label>
+                    <Form.Control
+                      name="keywords"
+                      as="textarea"
+                      rows={2}
+                      value={resumeData.jobDetails.keywords}
+                      onChange={handleJobDetailsChange}
+                      placeholder="Paste keywords from the job description here to tailor your resume"
+                    />
+                  </Col>
+                  <Col md={12}>
+                    <Form.Label>Custom Summary for This Application</Form.Label>
+                    <Form.Control
+                      name="customSummary"
+                      as="textarea"
+                      rows={3}
+                      value={resumeData.jobDetails.customSummary}
+                      onChange={handleJobDetailsChange}
+                      placeholder="Write a custom summary tailored to this specific job application"
+                    />
+                  </Col>
+                </Row>
+              </Accordion.Body>
+            </Accordion.Item>
           </Accordion>
 
           <div className="text-center mt-4">
             <Button variant="success" size="lg" onClick={handleSave}>
               Save Resume & View
             </Button>
+            <Button 
+              variant="info" 
+              size="lg" 
+              style={{ marginLeft: "50px" }} 
+              onClick={handleOpenModal}
+            >
+              AI Suggestions
+            </Button>
           </div>
         </Col>
       </Row>
+
+      {/* 🔹 Job Description Modal */}
+      <Modal show={showModal} onHide={() => setShowModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Job Description</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group>
+              <Form.Label>Paste the job description</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={5}
+                value={jobDescription}
+                onChange={(e) => setJobDescription(e.target.value)}
+                placeholder="Enter the job description here..."
+              />
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowModal(false)}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleAISuggestions}>
+            Get AI Suggestions
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* 🔹 AI Suggestions Modal */}
+  <Modal show={showSuggestionsModal} onHide={() => setShowSuggestionsModal(false)} size="lg" centered>
+  <Modal.Header closeButton>
+    <Modal.Title>AI Resume Suggestions</Modal.Title>
+  </Modal.Header>
+  <Modal.Body style={{ whiteSpace: "pre-wrap" }}>
+    {aiSuggestions}
+  </Modal.Body>
+  <Modal.Footer>
+    <Button variant="secondary" onClick={() => setShowSuggestionsModal(false)}>
+      Close
+    </Button>
+  </Modal.Footer>
+</Modal>
+
+                
+
     </Container>
   );
 }
