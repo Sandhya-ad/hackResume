@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { Container, Row, Col, Form, Button, Card, Accordion, Alert } from "react-bootstrap";
+import { Container, Row, Col, Form, Button, Card, Accordion, Alert, Modal } from "react-bootstrap"; 
 import { useNavigate, useLocation } from "react-router-dom";
 import { getResumeById, saveResume } from "../utils/storage";
-import { getResumeSuggestions } from "../utils/geminiApi"; // <-- ADD THIS
-
+import { getResumeSuggestions } from "../utils/geminiApi"; 
 
 export default function ResumeBuilder() {
   const navigate = useNavigate();
   const location = useLocation();
   const resumeId = location.state?.resumeId;
   const initialData = location.state?.initialData;
-  
+
   const [resumeData, setResumeData] = useState({
     personalInfo: {
       name: "",
@@ -29,15 +28,17 @@ export default function ResumeBuilder() {
   const [saved, setSaved] = useState(false);
   const [isNewResume, setIsNewResume] = useState(false);
 
+  // 🔹 New state for modal + job description
+  const [showModal, setShowModal] = useState(false);
+  const [jobDescription, setJobDescription] = useState("");
+
   useEffect(() => {
     if (resumeId) {
-      // Load existing resume
       const resume = getResumeById(resumeId);
       if (resume && resume.data) {
         setResumeData(resume.data);
       }
     } else if (initialData) {
-      // Create new resume with initial data from home page
       setResumeData(prev => ({
         ...prev,
         personalInfo: {
@@ -49,7 +50,6 @@ export default function ResumeBuilder() {
       }));
       setIsNewResume(true);
     } else {
-      // Create a completely new resume
       setIsNewResume(true);
     }
   }, [resumeId, initialData]);
@@ -153,7 +153,6 @@ export default function ResumeBuilder() {
     let resumeToSave;
     
     if (resumeId) {
-      // Update existing resume
       const existingResume = getResumeById(resumeId);
       if (!existingResume) {
         resumeToSave = {
@@ -172,7 +171,6 @@ export default function ResumeBuilder() {
         };
       }
     } else {
-      // Create new resume
       resumeToSave = {
         id: Date.now(),
         title: `${resumeData.personalInfo.name || 'New'} Resume`,
@@ -183,12 +181,10 @@ export default function ResumeBuilder() {
       };
     }
     
-    // Save to storage
     const success = saveResume(resumeToSave);
     
     if (success) {
       setSaved(true);
-      // Navigate to resume viewer after a brief delay
       setTimeout(() => {
         navigate('/my-resumes'); 
       }, 1000);
@@ -197,34 +193,31 @@ export default function ResumeBuilder() {
     }
   };
 
+  // 🔹 Open modal
+  const handleOpenModal = () => {
+    setShowModal(true);
+  };
+
+  // 🔹 AI Suggestions with job description
   const handleAISuggestions = async () => {
-  try {
-    let resumeToSend;
+    setShowModal(false); 
+    try {
+      let resumeToSend = resumeId 
+        ? (getResumeById(resumeId)?.data || resumeData) 
+        : resumeData;
 
-    if (resumeId) {
-      // Existing resume
-      const storedResume = getResumeById(resumeId);
-      resumeToSend = storedResume ? storedResume.data : resumeData;
-    } else {
-      // New resume
-      resumeToSend = resumeData;
+      const prompt = `Please provide suggestions to improve this resume for the following job description:\n\nJob Description: ${jobDescription}\n\nResume: ${JSON.stringify(resumeToSend)}`;
+
+      console.log("Prompt sent to Gemini API:", prompt);
+
+      const suggestions = await getResumeSuggestions({ resume: resumeToSend, jobDescription });
+
+      alert(suggestions);
+    } catch (error) {
+      console.error("Error fetching AI suggestions:", error);
+      alert("Sorry, something went wrong while getting suggestions.");
     }
-
-    // Call the Gemini API
-    const prompt = `Can you provide me with any suggestions for this resume: ${JSON.stringify(resumeToSend)}`;
-    console.log("Prompt sent to Gemini API:", prompt);
-
-    const suggestions = await getResumeSuggestions(resumeToSend);
-
-
-    // Display suggestions (for now using alert)
-    alert(suggestions);
-
-  } catch (error) {
-    console.error("Error fetching AI suggestions:", error);
-    alert("Sorry, something went wrong while getting suggestions.");
-  }
-};
+  };
 
   return (
     <Container fluid className="py-4">
@@ -243,7 +236,7 @@ export default function ResumeBuilder() {
       <Row>
         <Col>
           <Accordion defaultActiveKey="0" alwaysOpen>
-            {/* Personal Information */}
+            {/* Personal Info */}
             <Accordion.Item eventKey="0">
               <Accordion.Header>Personal Information</Accordion.Header>
               <Accordion.Body>
@@ -311,7 +304,7 @@ export default function ResumeBuilder() {
             <Accordion.Item eventKey="1">
               <Accordion.Header>Education</Accordion.Header>
               <Accordion.Body>
-                {resumeData.education.map((edu, index) => (
+                {resumeData.education.map((edu) => (
                   <Card key={edu.id} className="mb-3">
                     <Card.Body>
                       <Row className="g-3">
@@ -388,7 +381,7 @@ export default function ResumeBuilder() {
             <Accordion.Item eventKey="2">
               <Accordion.Header>Work Experience</Accordion.Header>
               <Accordion.Body>
-                {resumeData.experience.map((exp, index) => (
+                {resumeData.experience.map((exp) => (
                   <Card key={exp.id} className="mb-3">
                     <Card.Body>
                       <Row className="g-3">
@@ -505,13 +498,42 @@ export default function ResumeBuilder() {
               variant="info" 
               size="lg" 
               style={{ marginLeft: "50px" }} 
-              onClick={handleAISuggestions}
+              onClick={handleOpenModal}
             >
               AI Suggestions
-              </Button>
+            </Button>
           </div>
         </Col>
       </Row>
+
+      {/* 🔹 Job Description Modal */}
+      <Modal show={showModal} onHide={() => setShowModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Job Description</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group>
+              <Form.Label>Paste the job description</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={5}
+                value={jobDescription}
+                onChange={(e) => setJobDescription(e.target.value)}
+                placeholder="Enter the job description here..."
+              />
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowModal(false)}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleAISuggestions}>
+            Get AI Suggestions
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </Container>
   );
 }
