@@ -42,6 +42,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'applications',
     'users',
+    'rest_framework',
+    'hackResume',
 ]
 
 MIDDLEWARE = [
