@@ -1,10 +1,30 @@
-:root{
+:root {
   --bs-body-bg: #0a1e3a;     /* deep navy page bg */
   --bs-body-color: #e8eefc;  /* soft light text */
   --bs-primary: #2b6cb0;     /* brand blue */
+
+  /* exact dark-navy to match your logo background */
+  --hr-navy: #0a1522;        /* tweak if your logo bg differs */
 }
 
-.bg-navy { background-color: #0b2545 !important; } /* navbar bg */
+/* NAVBAR — match logo bg + bigger brand */
+.navbar-hr {
+  background-color: var(--hr-navy) !important;
+  box-shadow: 0 2px 10px rgba(0,0,0,.25);
+}
+.brand-logo {
+  display: block;
+  height: 130px;       /* keep in sync with Home.jsx */
+  width: auto;
+  border-radius: 20px; /* logo has soft corners */
+}
+.brand-text {
+  color: #fff;
+  font-weight: 800;
+  letter-spacing: .2px;
+  font-size: clamp(1.25rem, 2vw + 0.5rem, 2.5rem); /* responsive big */
+  line-height: 1;
+}
 
 /* Primary uses your CSS variable */
 .btn-primary { background-color: var(--bs-primary); border-color: var(--bs-primary); }
@@ -27,8 +47,8 @@
 /* Dark-input variants (only if you want inputs on dark bg) */
 .form-control-dark {
   color: #fff;
-  background-color: rgba(255, 255, 255, 0.10);
-  border-color: rgba(255, 255, 255, 0.25);
+  background-color: rgba(255,255,255,0.10);
+  border-color: rgba(255,255,255,0.25);
 }
 .form-control-dark::placeholder { color: rgba(255,255,255,0.65); }
 .form-control-dark:focus {
@@ -45,9 +65,14 @@
   border-color:#86b7fe; box-shadow:0 0 0 .2rem rgba(13,110,253,.25);
 }
 
-/* Hero section bg = body bg; signup card white like the reference */
+/* Hero helpers */
 .hero-dark { background: var(--bs-body-bg); }
 .signup-card { background:#fff; border-radius: 20px; }
 
-/* simple placeholder for left image */
-.mock-screenshot { height: 260px; border-radius: 16px; background: linear-gradient(135deg,#2b6cb0, #46c2ff); opacity:.18; }
+/* simple placeholder for left image (if you want to show one later) */
+.mock-screenshot {
+  height: 260px;
+  border-radius: 16px;
+  background: linear-gradient(135deg,#2b6cb0, #46c2ff);
+  opacity:.18;
+}
