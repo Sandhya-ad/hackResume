@@ -13,7 +13,6 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/applications" element={<Applications />} />
         <Route path="/login" element={<Login />} />
-        {/* optional placeholder for later */}
         <Route path="/tailor" element={<div style={{padding:20}}>Tailor Resume coming soon…</div>} />
         <Route path="/resume-builder" element={<ResumeBuilder />} />
         <Route path="/my-resumes" element={<MyResumes />} />

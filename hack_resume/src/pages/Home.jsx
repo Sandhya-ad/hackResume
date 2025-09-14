@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Navbar, Container, Button, Row, Col, Card, Form } from "react-bootstrap";
 import { Link, useNavigate } from "react-router-dom";
-import { getResumes } from "../utils/storage";
+import { getMasterResume } from "../utils/storage";
 
 export default function Home() {
   const [formData, setFormData] = useState({
@@ -10,6 +10,8 @@ export default function Home() {
     phone: ""
   });
   const navigate = useNavigate();
+
+  const masterResume = getMasterResume(); 
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -21,11 +23,10 @@ export default function Home() {
 
   const handleCreateResume = () => {
     if (!formData.name || !formData.email) {
-      alert("Please enter at least your name and email");
+      alert("Please enter your name and email");
       return;
     }
     
-    // Navigate to ResumeBuilder with initial data
     navigate('/resume-builder', { 
       state: { 
         initialData: formData 
@@ -34,12 +35,11 @@ export default function Home() {
   };
 
   const handleViewResumes = () => {
-    const resumes = getResumes();
-    if (resumes.length === 0) {
-      alert("You don't have any saved resumes yet. Create one first!");
-    } else {
-      navigate('/my-resumes');
-    }
+    navigate('/my-resumes');
+  };
+
+  const handleCreateFromMaster = () => {
+    navigate('/resume-builder', { state: { fromMaster: true } });
   };
 
   return (
@@ -59,11 +59,9 @@ export default function Home() {
         </Container>
       </Navbar>
 
-      {/* Hero section */}
       <section className="py-5 bg-light">
         <Container>
           <Row className="align-items-center g-4">
-            {/* Left side headline & blurb */}
             <Col lg={6}>
               <h1 className="display-4 fw-bold text-dark lh-tight">
                 Create a Professional Resume in Minutes
@@ -85,7 +83,6 @@ export default function Home() {
               </div>
             </Col>
 
-            {/* Right side simple form */}
             <Col lg={6}>
               <Card className="shadow-lg border-0">
                 <Card.Body className="p-4 p-md-5">
@@ -135,9 +132,20 @@ export default function Home() {
                           variant="primary" 
                           size="lg"
                         >
-                          Create My Resume
+                          Create New Resume
                         </Button>
                       </Col>
+                      {masterResume && (
+                        <Col xs={12} className="d-grid mt-2">
+                          <Button 
+                            onClick={handleCreateFromMaster} 
+                            variant="outline-primary" 
+                            size="lg"
+                          >
+                            Create from Master Template
+                          </Button>
+                        </Col>
+                      )}
                     </Row>
                   </Form>
                 </Card.Body>

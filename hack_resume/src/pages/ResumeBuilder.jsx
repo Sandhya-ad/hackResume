@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Container, Row, Col, Form, Button, Card, Accordion, Alert, Modal } from "react-bootstrap"; 
 import { useNavigate, useLocation } from "react-router-dom";
-import { getResumeById, saveResume } from "../utils/storage";
+import { getResumeById, saveResume, getMasterResume } from "../utils/storage";
 import { getResumeSuggestions } from "../utils/geminiApi"; 
 
 export default function ResumeBuilder() {
@@ -9,6 +9,7 @@ export default function ResumeBuilder() {
   const location = useLocation();
   const resumeId = location.state?.resumeId;
   const initialData = location.state?.initialData;
+  const fromMaster = location.state?.fromMaster;
 
   const [resumeData, setResumeData] = useState({
     personalInfo: {
@@ -21,7 +22,13 @@ export default function ResumeBuilder() {
     },
     education: [],
     experience: [],
-    skills: []
+    skills: [],
+    jobDetails: {
+      targetJob: "",
+      company: "",
+      keywords: "",
+      customSummary: ""
+    }
   });
 
   const [newSkill, setNewSkill] = useState("");
@@ -42,7 +49,18 @@ export default function ResumeBuilder() {
     if (resumeId) {
       const resume = getResumeById(resumeId);
       if (resume && resume.data) {
-        setResumeData(resume.data);
+        setResumeData(prev => ({
+          ...prev,
+          ...resume.data,
+          personalInfo: {
+            ...prev.personalInfo,
+            ...resume.data.personalInfo,
+          },
+          jobDetails: {
+            ...prev.jobDetails,
+            ...resume.data.jobDetails,
+          },
+        }));
       }
     } else if (initialData) {
       setResumeData(prev => ({
@@ -55,10 +73,28 @@ export default function ResumeBuilder() {
         }
       }));
       setIsNewResume(true);
+    } else if (fromMaster) {
+      const master = getMasterResume();
+      if (master) {
+        setResumeData(prev => ({
+          ...prev,
+          ...master.data,
+          personalInfo: {
+            ...prev.personalInfo,
+            ...master.data.personalInfo,
+          },
+          jobDetails: {
+            ...prev.jobDetails,
+            ...master.data.jobDetails,
+          },
+        }));
+        setIsNewResume(true);
+      }
     } else {
       setIsNewResume(true);
     }
-  }, [resumeId, initialData]);
+  }, [resumeId, initialData, fromMaster]);
+  
 
   const handlePersonalInfoChange = (e) => {
     const { name, value } = e.target;
@@ -66,6 +102,17 @@ export default function ResumeBuilder() {
       ...prev,
       personalInfo: {
         ...prev.personalInfo,
+        [name]: value
+      }
+    }));
+  };
+
+  const handleJobDetailsChange = (e) => {
+    const { name, value } = e.target;
+    setResumeData(prev => ({
+      ...prev,
+      jobDetails: {
+        ...prev.jobDetails,
         [name]: value
       }
     }));
@@ -164,7 +211,7 @@ export default function ResumeBuilder() {
         resumeToSave = {
           id: Date.now(),
           title: `${resumeData.personalInfo.name || 'New'} Resume`,
-          isMaster: true,
+          isMaster: false,
           data: resumeData,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
@@ -180,7 +227,7 @@ export default function ResumeBuilder() {
       resumeToSave = {
         id: Date.now(),
         title: `${resumeData.personalInfo.name || 'New'} Resume`,
-        isMaster: true,
+        isMaster: false,
         data: resumeData,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
@@ -192,7 +239,7 @@ export default function ResumeBuilder() {
     if (success) {
       setSaved(true);
       setTimeout(() => {
-        navigate('/my-resumes'); 
+        navigate('/my-resumes');
       }, 1000);
     } else {
       alert("Error saving resume. Please try again.");
@@ -237,8 +284,11 @@ export default function ResumeBuilder() {
               {resumeId ? 'Edit Resume' : 'Create New Resume'}
               {isNewResume && <span className="badge bg-secondary ms-2">New</span>}
             </h2>
+            <Button variant="outline-secondary" onClick={() => navigate('/')}>
+              Back to Home
+            </Button>
           </div>
-          {saved && <Alert variant="success" className="mt-3">Resume saved successfully! Redirecting to viewer...</Alert>}
+          {saved && <Alert variant="success" className="mt-3">Resume saved successfully! Redirecting to your resumes...</Alert>}
         </Col>
       </Row>
       
@@ -309,7 +359,6 @@ export default function ResumeBuilder() {
               </Accordion.Body>
             </Accordion.Item>
 
-            {/* Education */}
             <Accordion.Item eventKey="1">
               <Accordion.Header>Education</Accordion.Header>
               <Accordion.Body>
@@ -386,7 +435,6 @@ export default function ResumeBuilder() {
               </Accordion.Body>
             </Accordion.Item>
 
-            {/* Experience */}
             <Accordion.Item eventKey="2">
               <Accordion.Header>Work Experience</Accordion.Header>
               <Accordion.Body>
@@ -456,7 +504,6 @@ export default function ResumeBuilder() {
               </Accordion.Body>
             </Accordion.Item>
 
-            {/* Skills */}
             <Accordion.Item eventKey="3">
               <Accordion.Header>Skills</Accordion.Header>
               <Accordion.Body>
@@ -493,6 +540,54 @@ export default function ResumeBuilder() {
                     {resumeData.skills.length === 0 && (
                       <p className="text-muted mt-2">No skills added yet. Add your technical and soft skills.</p>
                     )}
+                  </Col>
+                </Row>
+              </Accordion.Body>
+            </Accordion.Item>
+
+            <Accordion.Item eventKey="4">
+              <Accordion.Header>Job Application Details (Optional)</Accordion.Header>
+              <Accordion.Body>
+                <Row className="g-3">
+                  <Col md={6}>
+                    <Form.Label>Target Job Title</Form.Label>
+                    <Form.Control
+                      name="targetJob"
+                      value={resumeData.jobDetails.targetJob}
+                      onChange={handleJobDetailsChange}
+                      placeholder="e.g., Senior Frontend Developer"
+                    />
+                  </Col>
+                  <Col md={6}>
+                    <Form.Label>Company Name</Form.Label>
+                    <Form.Control
+                      name="company"
+                      value={resumeData.jobDetails.company}
+                      onChange={handleJobDetailsChange}
+                      placeholder="e.g., Google, Amazon, etc."
+                    />
+                  </Col>
+                  <Col md={12}>
+                    <Form.Label>Job Description Keywords</Form.Label>
+                    <Form.Control
+                      name="keywords"
+                      as="textarea"
+                      rows={2}
+                      value={resumeData.jobDetails.keywords}
+                      onChange={handleJobDetailsChange}
+                      placeholder="Paste keywords from the job description here to tailor your resume"
+                    />
+                  </Col>
+                  <Col md={12}>
+                    <Form.Label>Custom Summary for This Application</Form.Label>
+                    <Form.Control
+                      name="customSummary"
+                      as="textarea"
+                      rows={3}
+                      value={resumeData.jobDetails.customSummary}
+                      onChange={handleJobDetailsChange}
+                      placeholder="Write a custom summary tailored to this specific job application"
+                    />
                   </Col>
                 </Row>
               </Accordion.Body>
