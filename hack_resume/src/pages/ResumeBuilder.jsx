@@ -470,6 +470,14 @@ export default function ResumeBuilder() {
             <Button variant="success" size="lg" onClick={handleSave}>
               Save Resume & View
             </Button>
+            <Button 
+              variant="info" 
+              size="lg" 
+              style={{ marginLeft: "50px" }} 
+              onClick={() => alert("AI Suggestions coming soon!")}
+            >
+              AI Suggestions
+            </Button>
           </div>
         </Col>
       </Row>
