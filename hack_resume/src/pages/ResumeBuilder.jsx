@@ -211,7 +211,11 @@ export default function ResumeBuilder() {
     }
 
     // Call the Gemini API
+    const prompt = `Can you provide me with any suggestions for this resume: ${JSON.stringify(resumeToSend)}`;
+    console.log("Prompt sent to Gemini API:", prompt);
+
     const suggestions = await getResumeSuggestions(resumeToSend);
+
 
     // Display suggestions (for now using alert)
     alert(suggestions);
